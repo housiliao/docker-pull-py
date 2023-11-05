@@ -257,7 +257,7 @@ def pull_image(docker_image, auth, manifest, blob):
 
     # 保存 blob 信息
     digest = manifest['config']['digest']
-    with open(os.path.join(imgdir, digest[7:]+'.json'), 'wb') as fp:
+    with open(os.path.join(imgdir, digest[7:]+'.json'), 'w') as fp:
         json.dump(blob, fp, indent=2)
 
     content = [{
