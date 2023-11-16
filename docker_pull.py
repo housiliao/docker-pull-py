@@ -203,6 +203,15 @@ def download_layer_blob(docker_image, auth, layer, layerdir):
 
     sys.stdout.flush()
     print("\r{}: Pull complete [{}]".format(blob_digest[7:19], bresp.headers['Content-Length']))
+    
+    # 检查下载文件大小
+    size = os.stat(layer_filename).st_size
+    if size == layer['size']:
+        return layer_filename
+    else:
+        print("\r{}: size not equal, check download again".format(blob_digest[7:19]))
+        return download_layer_blob(docker_image, auth, layer, layerdir)
+
     return layer_filename
 
 # ======================== Layers end ====================================
@@ -247,6 +256,10 @@ def decompress_all_layers(all_layer_dirs):
             unzLayer = gzip.open(gzip_file,'rb')
             shutil.copyfileobj(unzLayer, fp)
             unzLayer.close()
+    for layerdir in all_layer_dirs:
+        gzip_file = os.path.join(layerdir, 'layer_gzip.tar')
+        if not os.path.exists(gzip_file):
+            continue
         # 解压之后删除 gzip 文件
         os.remove(gzip_file)
 
@@ -281,7 +294,7 @@ def pull_image(docker_image, auth, manifest, blob):
             fp.write('1.0')
 
         download_layer_blob(docker_image, auth, layer, layerdir)
-        content[0]['Layers'].append(os.path.join(fake_layerid, 'layer.tar'))
+        content[0]['Layers'].append(fake_layerid+'/layer.tar')
         # 在 layer tar 目录下创建一个 json 文件 =======================
         with open(os.path.join(layerdir, 'json'), 'w') as fp:
             if i == len(manifest['layers']):
